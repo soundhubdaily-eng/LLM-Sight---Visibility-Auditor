@@ -1,0 +1,5 @@
+{
+  "name": "LLM Sight - Visibility Auditor",
+  "description": "A comprehensive tool to audit and analyze website visibility and ranking within LLM responses and Generative Search results.",
+  "requestFramePermissions": []
+}
