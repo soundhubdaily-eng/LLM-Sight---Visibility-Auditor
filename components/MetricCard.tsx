@@ -27,27 +27,35 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   const numValue = typeof value === 'number' ? value : 0;
   
   // Calculate circle props for score type
-  const radius = 28;
+  const radius = 26; 
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = isScore ? circumference - (numValue / 100) * circumference : 0;
-
+  
   return (
-    <div className="relative overflow-hidden bg-slate-800/40 border border-slate-700/50 rounded-2xl p-6 backdrop-blur-sm hover:border-slate-600/80 transition-all duration-300 group hover:shadow-lg hover:shadow-blue-900/10">
-      <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-gradient-to-br from-white/5 to-transparent rounded-full blur-xl group-hover:from-white/10 transition-all"></div>
+    <div className="relative overflow-hidden bg-slate-800/40 border border-slate-700/50 rounded-2xl p-6 backdrop-blur-sm hover:border-slate-600/80 transition-all duration-300 group hover:shadow-lg hover:shadow-blue-900/10 h-full flex flex-col justify-between">
+      {/* Background Decorative Blob */}
+      <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-gradient-to-br from-white/5 to-transparent rounded-full blur-xl group-hover:from-white/10 transition-all pointer-events-none"></div>
       
-      <div className="flex items-start justify-between mb-4 relative z-10">
-        <div className="flex items-center gap-3">
-          <div className={`p-2.5 rounded-xl bg-slate-700/30 ${colorClass} ring-1 ring-inset ring-white/5`}>
+      {/* Header Row: Title & Score Graphic */}
+      <div className="flex items-start justify-between mb-4 relative z-10 gap-4">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <div className={`p-2.5 rounded-xl bg-slate-700/30 ${colorClass} ring-1 ring-inset ring-white/5 flex-shrink-0`}>
             <Icon size={20} />
           </div>
-          <h3 className="text-slate-400 text-sm font-medium tracking-wide uppercase">{title}</h3>
+          <h3 className="text-slate-400 text-sm font-medium tracking-wide uppercase truncate" title={title}>
+            {title}
+          </h3>
         </div>
         
         {isScore && (
-          <div className="relative flex items-center justify-center w-16 h-16 -mt-2 -mr-2">
-             <svg className="transform -rotate-90 w-16 h-16">
+          <div className="relative flex-none w-16 h-16">
+             <svg 
+               className="w-full h-full transform -rotate-90"
+               viewBox="0 0 64 64"
+             >
+              {/* Background Circle */}
               <circle
-                className="text-slate-700"
+                className="text-slate-700/50"
                 strokeWidth="4"
                 stroke="currentColor"
                 fill="transparent"
@@ -55,8 +63,9 @@ export const MetricCard: React.FC<MetricCardProps> = ({
                 cx="32"
                 cy="32"
               />
+              {/* Progress Circle */}
               <circle
-                className={colorClass.replace('text-', 'text-')} // Just ensures we use the color class
+                className={colorClass}
                 strokeWidth="4"
                 strokeDasharray={circumference}
                 strokeDashoffset={strokeDashoffset}
@@ -69,11 +78,14 @@ export const MetricCard: React.FC<MetricCardProps> = ({
                 style={{ transition: "stroke-dashoffset 1s ease-out" }}
               />
             </svg>
-            <span className={`absolute text-sm font-bold ${colorClass}`}>{value}</span>
+            <div className={`absolute inset-0 flex items-center justify-center text-sm font-bold ${colorClass}`}>
+              {value}
+            </div>
           </div>
         )}
       </div>
 
+      {/* Content Row: Value & Subtext */}
       <div className="relative z-10">
         {!isScore && (
           <div className="flex items-baseline gap-2">
@@ -86,7 +98,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
         
         {isScore && (
           <div className="h-8 flex items-center">
-             <span className="text-sm text-slate-400">{subtext || 'Overall Visibility'}</span>
+             <span className="text-sm text-slate-400 line-clamp-2 leading-tight">{subtext || 'Overall Visibility'}</span>
           </div>
         )}
 
@@ -97,7 +109,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
                   {trend}
                 </span>
              )}
-             {subtext && <span className="text-xs text-slate-500">{subtext}</span>}
+             {subtext && <span className="text-xs text-slate-500 truncate max-w-full">{subtext}</span>}
           </div>
         )}
       </div>
