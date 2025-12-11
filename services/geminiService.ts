@@ -27,11 +27,14 @@ export const generateLlmTxtContent = async (req: LlmTxtRequest): Promise<string>
     Description: ${req.description}
     Key Pages/Routes: ${req.keyPages.join(', ')}
 
+    Step 1: Use Google Search to research the website, verifying its structure, main documentation pages, and current offerings to ensure accuracy.
+    Step 2: Generate the llms.txt file content.
+
     Strictly follow these "Things to Consider" for llms.txt creation:
     1. Use simple and clear Markdown format.
     2. Include only important content; avoid unnecessary details.
     3. ABSOLUTELY NO HTML or JavaScript structures. Pure Markdown only.
-    4. Provide up-to-date and descriptive information.
+    4. Provide up-to-date and descriptive information based on your search findings.
     5. Present secondary content (like social links or minor pages) in a separate "Optional" section.
     6. Ensure the tone is objective and machine-readable.
 
@@ -51,6 +54,9 @@ export const generateLlmTxtContent = async (req: LlmTxtRequest): Promise<string>
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
     contents: prompt,
+    config: {
+        tools: [{ googleSearch: {} }],
+    }
   });
 
   return response.text || "Failed to generate content.";
@@ -114,7 +120,9 @@ export const optimizeContent = async (req: ContentOptimizationRequest): Promise<
   const text = response.text;
   if (!text) throw new Error("Failed to optimize content.");
 
-  return JSON.parse(text) as ContentOptimizationResult;
+  // Robust JSON parsing
+  const cleanJson = text.replace(/```json\n?|```/g, '').trim();
+  return JSON.parse(cleanJson) as ContentOptimizationResult;
 };
 
 export const analyzeVisibility = async (request: AuditRequest): Promise<AuditResult> => {
@@ -289,7 +297,8 @@ export const analyzeVisibility = async (request: AuditRequest): Promise<AuditRes
   const jsonText = analysisResponse.text;
   if (!jsonText) throw new Error("Failed to generate analysis");
 
-  const parsedData = JSON.parse(jsonText);
+  const cleanJson = jsonText.replace(/```json\n?|```/g, '').trim();
+  const parsedData = JSON.parse(cleanJson);
 
   // --- COMPETITOR LIST PROCESSING ---
   let competitors: CompetitorData[] = parsedData.competitors || [];

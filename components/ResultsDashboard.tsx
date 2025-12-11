@@ -14,16 +14,16 @@ import {
   Target,
   Share2,
   Download,
-  MessageSquareQuote,
-  Check,
-  Tag,
-  Link,
-  Loader2,
-  Copy,
-  AlertTriangle,
-  ArrowUpCircle,
-  MinusCircle
+  Lock,
+  MessageSquare,
+  Sparkles,
+  Bot,
+  Globe,
+  MoreHorizontal,
+  ChevronDown
 } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 interface ResultsDashboardProps {
   result: AuditResult;
@@ -31,359 +31,365 @@ interface ResultsDashboardProps {
   requestKeyword: string;
 }
 
+// --- SUB-COMPONENT: LOCKED FEATURE OVERLAY ---
+const LockedFeature: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => {
+  return (
+    <div className="relative group overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/40">
+      {/* Blurred Content */}
+      <div className="filter blur-sm opacity-50 pointer-events-none select-none transition-all duration-500 group-hover:blur-md group-hover:opacity-40">
+        {children}
+      </div>
+      
+      {/* Lock Overlay */}
+      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/10 transition-colors group-hover:bg-slate-900/30">
+        <div className="bg-slate-950/90 backdrop-blur-xl border border-slate-700/50 p-6 rounded-2xl shadow-2xl flex flex-col items-center text-center max-w-xs transform transition-transform duration-300 group-hover:scale-105">
+          <div className="w-12 h-12 bg-indigo-500/20 rounded-full flex items-center justify-center text-indigo-400 mb-3">
+            <Lock size={20} />
+          </div>
+          <h4 className="text-white font-bold text-lg mb-1">{title}</h4>
+          <p className="text-slate-400 text-xs mb-4">
+            Unlock premium agency insights to view detailed competitor data and share of voice.
+          </p>
+          <button className="bg-white text-slate-950 px-5 py-2 rounded-full text-xs font-bold hover:bg-indigo-50 transition-colors">
+            Upgrade Plan
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- SUB-COMPONENT: LLM SIMULATION WIDGET ---
+const LLMSimulationWidget: React.FC<{ result: AuditResult; keyword: string }> = ({ result, keyword }) => {
+  const [activeTab, setActiveTab] = useState<'search' | 'chat'>('search');
+  
+  // Format the brand name in the preview text to be highlighted
+  const highlightBrand = (text: string) => {
+    // Simple heuristic to bold specific terms (can be improved)
+    return text;
+  };
+
+  return (
+    <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden mb-8 shadow-2xl">
+      <div className="bg-slate-950/50 border-b border-slate-800 p-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Sparkles size={18} className="text-indigo-400" />
+          <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wide">Generative Preview</h3>
+        </div>
+        <div className="flex bg-slate-800/80 p-1 rounded-lg">
+          <button 
+            onClick={() => setActiveTab('search')}
+            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-2 ${activeTab === 'search' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+          >
+            <Search size={12} /> SGE / Overview
+          </button>
+          <button 
+            onClick={() => setActiveTab('chat')}
+            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-2 ${activeTab === 'chat' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+          >
+            <MessageSquare size={12} /> AI Chat
+          </button>
+        </div>
+      </div>
+
+      <div className="p-6 md:p-8 bg-slate-900/30 min-h-[300px]">
+        {activeTab === 'search' ? (
+          /* SEARCH GENERATIVE EXPERIENCE SIMULATION */
+          <div className="max-w-3xl mx-auto bg-[#1a1a1a] rounded-2xl border border-[#333] overflow-hidden font-sans">
+            <div className="p-4 border-b border-[#333] bg-[#222]">
+              <div className="h-2 w-24 bg-[#444] rounded-full mb-3"></div>
+              <div className="text-[#a8c7fa] text-xl font-medium mb-1">Generative AI is experimental.</div>
+            </div>
+            <div className="p-6">
+              <div className="flex gap-4 mb-6 overflow-x-auto pb-2 scrollbar-hide">
+                {/* Source Chips */}
+                {result.groundingSources.slice(0, 3).map((source, idx) => (
+                  <div key={idx} className="flex-shrink-0 w-48 bg-[#2a2a2a] rounded-xl p-3 border border-[#333] hover:bg-[#333] transition-colors cursor-pointer">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-4 h-4 rounded-full bg-slate-600"></div>
+                      <div className="text-[10px] text-slate-400 truncate w-full">{source.title}</div>
+                    </div>
+                    <div className="h-2 w-3/4 bg-[#444] rounded mb-1.5"></div>
+                    <div className="h-2 w-1/2 bg-[#444] rounded"></div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="text-slate-300 leading-relaxed text-sm space-y-4">
+                <p>
+                  Based on the search for <span className="text-white font-semibold">"{keyword}"</span>, here is what we found.
+                </p>
+                <div className="p-4 bg-[#2a2a2a] rounded-xl border-l-4 border-indigo-500 text-slate-200 italic">
+                  "{result.llmResponsePreview}"
+                </div>
+                <p>
+                  Key factors include pricing, availability, and user reviews.
+                </p>
+              </div>
+              
+              <div className="mt-6 pt-4 border-t border-[#333]">
+                <div className="flex items-center justify-between text-[#a8c7fa] text-sm font-medium cursor-pointer hover:underline">
+                  <span>Show more</span>
+                  <ChevronDown size={16} />
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* CHAT INTERFACE SIMULATION */
+          <div className="max-w-3xl mx-auto flex flex-col gap-6 font-sans">
+            {/* User Message */}
+            <div className="flex gap-4 justify-end">
+              <div className="bg-[#2f2f2f] text-white px-5 py-3 rounded-2xl rounded-tr-sm max-w-[80%]">
+                Tell me about the best options for {keyword}.
+              </div>
+              <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold">U</div>
+            </div>
+
+            {/* AI Response */}
+            <div className="flex gap-4">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-500 to-blue-500 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20">
+                <Sparkles size={14} />
+              </div>
+              <div className="flex-1 space-y-4">
+                <div className="text-slate-200 leading-relaxed text-sm">
+                  Here are the top results I found. 
+                  <span className="font-semibold text-white"> {result.topRankingKeywords[0].keyword} </span> 
+                  is a competitive space.
+                </div>
+                
+                <div className="bg-[#1e1e1e] border border-[#333] rounded-xl p-4 shadow-xl">
+                   <div className="flex items-start gap-3">
+                     <Bot className="text-emerald-400 mt-1" size={20} />
+                     <div className="text-slate-300 text-sm">
+                       {result.llmResponsePreview}
+                     </div>
+                   </div>
+                   
+                   {/* Citations in Chat */}
+                   <div className="mt-4 flex flex-wrap gap-2">
+                     {result.groundingSources.slice(0, 4).map((source, idx) => (
+                       <a key={idx} href={source.uri} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 bg-[#2a2a2a] hover:bg-[#333] border border-[#444] rounded-full text-[10px] text-slate-400 transition-colors">
+                         <Globe size={10} />
+                         <span className="max-w-[100px] truncate">{source.title}</span>
+                       </a>
+                     ))}
+                   </div>
+                </div>
+                
+                <div className="flex gap-2">
+                  <button className="px-4 py-2 rounded-lg border border-[#444] text-slate-400 text-xs hover:bg-[#2a2a2a] transition-colors">
+                     Compare prices
+                  </button>
+                  <button className="px-4 py-2 rounded-lg border border-[#444] text-slate-400 text-xs hover:bg-[#2a2a2a] transition-colors">
+                     What are the reviews?
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// --- MAIN COMPONENT ---
 export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ result, requestUrl, requestKeyword }) => {
-  const [copied, setCopied] = useState(false);
-  const [exporting, setExporting] = useState(false);
-  const [previewCopied, setPreviewCopied] = useState(false);
   const dashboardRef = useRef<HTMLDivElement>(null);
+  const [downloading, setDownloading] = useState(false);
 
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return "text-emerald-400";
-    if (score >= 50) return "text-amber-400";
-    return "text-rose-400";
-  };
-
-  const getSentimentColor = (sentiment: string) => {
-     switch(sentiment.toLowerCase()) {
-       case 'positive': return "text-emerald-400";
-       case 'negative': return "text-rose-400";
-       default: return "text-blue-300";
-     }
-  };
-
-  const getPriorityStyles = (priority: string) => {
-    switch(priority?.toLowerCase()) {
-      case 'high': return "bg-rose-500/10 text-rose-400 border-rose-500/20";
-      case 'medium': return "bg-amber-500/10 text-amber-400 border-amber-500/20";
-      case 'low': return "bg-blue-500/10 text-blue-400 border-blue-500/20";
-      default: return "bg-slate-700/50 text-slate-400 border-slate-700";
-    }
-  };
-
-  // Function to print the page (Export PDF) via Snapshot
-  const handleExportPDF = async () => {
+  const downloadPdf = async () => {
     if (!dashboardRef.current) return;
-    setExporting(true);
-
+    setDownloading(true);
+    
     try {
-      // Dynamic imports to ensure app doesn't break if libs fail to load
-      // @ts-ignore
-      const html2canvasModule = await import('html2canvas');
-      const html2canvas = html2canvasModule.default || html2canvasModule;
-      
-      // @ts-ignore
-      const jspdfModule = await import('jspdf');
-      const jsPDF = jspdfModule.jsPDF || jspdfModule.default?.jsPDF || jspdfModule.default;
-
-      if (!html2canvas || !jsPDF) {
-        throw new Error("PDF libraries failed to load");
-      }
-
-      // Small delay to allow state changes if any
-      await new Promise(resolve => setTimeout(resolve, 100));
-
       const canvas = await html2canvas(dashboardRef.current, {
-        scale: 2, // Higher scale for better resolution
-        useCORS: true,
-        backgroundColor: '#0f172a', // Match background color
-        logging: false,
-        windowWidth: 1280, // Force desktop width to prevent mobile cut-off
-        onclone: (clonedDoc: Document) => {
-             // Force standard desktop width on the cloned document
-             // This prevents text from wrapping strangely or cutting off on mobile devices
-             const clonedElement = clonedDoc.querySelector('.p-4.md\\:p-8') as HTMLElement;
-             if (clonedElement) {
-                clonedElement.style.width = '1280px';
-                clonedElement.style.padding = '40px';
-             }
-
-             // Expand scrollable areas
-             const scrollable = clonedDoc.querySelector('.overflow-y-auto');
-             if(scrollable) {
-                (scrollable as HTMLElement).style.overflow = 'visible';
-                (scrollable as HTMLElement).style.height = 'auto';
-                (scrollable as HTMLElement).style.maxHeight = 'none';
-             }
-        }
+        scale: 2,
+        backgroundColor: '#0f172a',
+        ignoreElements: (element) => element.classList.contains('no-print')
       });
-
-      const imgData = canvas.toDataURL('image/png');
       
-      // Calculate PDF dimensions to fit the image
-      const pdf = new jsPDF({
-        orientation: 'p',
-        unit: 'px',
-        format: [canvas.width, canvas.height] 
-      });
-
-      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-      pdf.save(`LLM-Audit-${new Date().toISOString().split('T')[0]}.pdf`);
-
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`visibility-audit-${new Date().toISOString().slice(0,10)}.pdf`);
     } catch (err) {
-      console.error("PDF Generation failed:", err);
-      alert("Failed to generate PDF snapshot. Falling back to browser print.");
-      window.print(); // Fallback to standard print
+      console.error("PDF Export failed", err);
+      alert("Failed to generate PDF. Please try again.");
     } finally {
-      setExporting(false);
-    }
-  };
-
-  // Function to share via URL
-  const handleShare = async () => {
-    // Generate permalink with query params
-    const params = new URLSearchParams();
-    params.set('url', requestUrl);
-    if (requestKeyword) params.set('keyword', requestKeyword);
-    params.set('audit', 'true');
-    
-    const shareUrl = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
-    
-    // Copy to Clipboard
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy', err);
-    }
-  };
-
-  const handleCopyPreview = async () => {
-    try {
-      await navigator.clipboard.writeText(result.llmResponsePreview);
-      setPreviewCopied(true);
-      setTimeout(() => setPreviewCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy preview', err);
+      setDownloading(false);
     }
   };
 
   return (
-    <div className="space-y-6 animate-fade-in pb-20">
+    <div ref={dashboardRef} className="bg-slate-950 p-2 md:p-8 min-h-screen">
       
-      {/* Top Stats Row */}
-      <div ref={dashboardRef} className="p-4 md:p-8 bg-slate-900 text-slate-200">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
-            <MetricCard 
-              title="LLM Visibility Score" 
-              value={result.overallScore} 
-              icon={Trophy} 
-              type="score"
-              colorClass={getScoreColor(result.overallScore)}
-              subtext={result.overallScore > 70 ? "Excellent Visibility" : result.overallScore > 40 ? "Moderate Visibility" : "Low Visibility"}
-            />
-            <MetricCard 
-              title="Search Position" 
-              value={result.topRankingKeywords[0].rank} 
-              icon={Target}
-              type="rank"
-              colorClass="text-indigo-400"
-              subtext={`Rank for "${result.topRankingKeywords[0].keyword}"`}
-            />
-             <MetricCard 
-              title="Brand Sentiment" 
-              value={result.brandSentiment} 
-              icon={ThumbsUp}
-              colorClass={getSentimentColor(result.brandSentiment)}
-              subtext="Based on grounding analysis"
-            />
-            <MetricCard 
-              title="Citations Found" 
-              value={result.groundingSources.length} 
-              icon={ExternalLink}
-              colorClass="text-blue-400"
-              subtext="Verified Brand Mentions"
-            />
+      {/* --- HEADER --- */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 border-b border-slate-800 pb-6 gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+             <span className="bg-blue-600/20 text-blue-400 text-[10px] font-bold px-2 py-0.5 rounded border border-blue-600/30 uppercase tracking-wider">
+               GEO Audit Report
+             </span>
+             <span className="text-slate-500 text-xs">{new Date().toLocaleDateString()}</span>
           </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            
-            {/* Main Content Column */}
-            <div className="lg:col-span-8 flex flex-col gap-6">
-              
-              {/* Simulated Response Preview */}
-              <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-6 backdrop-blur-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                    <MessageSquareQuote size={20} className="text-purple-400" />
-                    Simulated LLM Answer Preview
-                  </h3>
-                  <button
-                    onClick={handleCopyPreview}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-700/30 hover:bg-slate-700/50 border border-slate-700/50 text-xs font-medium text-slate-300 hover:text-white transition-all"
-                    title="Copy to clipboard"
-                  >
-                    {previewCopied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
-                    {previewCopied ? "Copied" : "Copy Text"}
-                  </button>
-                </div>
-                
-                <div className="bg-slate-900/50 rounded-xl p-5 border border-slate-700/50 relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-purple-500 to-blue-500"></div>
-                  <p className="text-slate-300 text-sm leading-relaxed font-mono whitespace-pre-wrap">
-                    "{result.llmResponsePreview}"
-                  </p>
-                  <div className="mt-3 pt-3 border-t border-slate-800/50 flex items-center gap-2">
-                    <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Brand Attributes:</span>
-                    <div className="flex flex-wrap gap-2">
-                      {result.brandAttributes.map((attr, i) => (
-                        <span key={i} className="px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20 text-xs">
-                          {attr}
-                        </span>
-                      ))}
-                      {result.brandAttributes.length === 0 && <span className="text-xs text-slate-600">N/A</span>}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Competitor Analysis */}
-              <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-6 backdrop-blur-sm">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                    <Eye size={20} className="text-blue-400" />
-                    Competitor Landscape
-                  </h3>
-                  <div className="flex items-center gap-3">
-                     <div className="flex items-center gap-1.5">
-                        <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
-                        <span className="text-xs text-slate-400">You</span>
-                     </div>
-                     <div className="flex items-center gap-1.5">
-                        <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                        <span className="text-xs text-slate-400">Competitors</span>
-                     </div>
-                  </div>
-                </div>
-                <CompetitorBarChart data={result.competitorAnalysis} />
-              </div>
-
-              {/* Recommendations */}
-              <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 border border-slate-700/50 rounded-2xl p-6 backdrop-blur-sm flex-1">
-                <h3 className="text-lg font-semibold text-white mb-5 flex items-center gap-2">
-                  <Lightbulb size={20} className="text-yellow-400" />
-                  Optimization Opportunities
-                </h3>
-                <div className="grid gap-3">
-                  {result.recommendations.map((rec, index) => {
-                    // Compatibility for old history records that might be strings
-                    const isObject = typeof rec !== 'string';
-                    const text = isObject ? rec.text : rec;
-                    const priority = isObject ? rec.priority : null;
-                    
-                    return (
-                      <div key={index} className="flex items-start gap-3 p-4 rounded-xl bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50 transition-colors group">
-                        <div className="min-w-[24px] h-[24px] rounded-full bg-yellow-400/10 flex items-center justify-center text-yellow-400 text-xs font-bold mt-0.5">
-                          {index + 1}
-                        </div>
-                        <div className="flex-1">
-                           <div className="flex items-start justify-between gap-4">
-                             <p className="text-slate-300 text-sm leading-relaxed">
-                               {text}
-                             </p>
-                             {priority && (
-                               <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded border flex-shrink-0 ${getPriorityStyles(priority)}`}>
-                                 {priority}
-                               </span>
-                             )}
-                           </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {/* Sidebar Section */}
-            <div className="lg:col-span-4 flex flex-col gap-6">
-               {/* Share of Voice */}
-               <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-6 backdrop-blur-sm">
-                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                  <Activity size={20} className="text-indigo-400" />
-                  Share of Voice
-                </h3>
-                <ShareOfVoiceChart data={result.shareOfVoice} />
-              </div>
-
-              {/* Discovered Keywords (New Feature) */}
-              {result.discoveredKeywords && result.discoveredKeywords.length > 0 && (
-                <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-6 backdrop-blur-sm">
-                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <Tag size={20} className="text-emerald-400" />
-                    Discovered Keywords
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                     {result.discoveredKeywords.map((k, i) => (
-                        <span key={i} className={`text-xs px-2.5 py-1 rounded-full border ${i === 0 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 font-bold' : 'bg-slate-700/30 border-slate-700 text-slate-300'}`}>
-                          {k.keyword}
-                        </span>
-                     ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Citations List */}
-              <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-6 backdrop-blur-sm flex-1 flex flex-col max-h-[500px] overflow-y-auto">
-                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                  <Search size={20} className="text-emerald-400" />
-                  Verified Mentions & Citations
-                </h3>
-                <div className="space-y-3 flex-1 pr-2">
-                  {result.groundingSources.length > 0 ? (
-                    result.groundingSources.map((source, index) => (
-                      <a 
-                        key={index} 
-                        href={source.uri} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="block p-3 rounded-xl bg-slate-700/20 hover:bg-slate-700/50 border border-slate-700/30 hover:border-blue-500/30 transition-all group cursor-pointer relative"
-                      >
-                        <div className="flex items-center gap-3 mb-1">
-                          <div className="w-6 h-6 rounded-md bg-blue-500/10 text-blue-400 flex items-center justify-center text-xs font-bold flex-shrink-0">
-                            {index + 1}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="text-sm font-medium text-blue-400 group-hover:text-blue-300 truncate">
-                              {source.title}
-                            </div>
-                          </div>
-                          <ExternalLink size={14} className="text-slate-600 group-hover:text-white transition-colors flex-shrink-0" />
-                        </div>
-                        <div className="text-xs text-slate-500 truncate pl-9 font-mono opacity-80 group-hover:opacity-100">
-                          {new URL(source.uri).hostname}
-                        </div>
-                      </a>
-                    ))
-                  ) : (
-                    <div className="flex flex-col items-center justify-center h-40 text-center p-4 border-2 border-dashed border-slate-700 rounded-xl">
-                      <Search size={24} className="text-slate-600 mb-2" />
-                      <p className="text-slate-500 text-sm">No direct mentions found in top search results.</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
+          <h1 className="text-3xl font-bold text-white mb-1">Visibility Analysis</h1>
+          <p className="text-slate-400 text-sm">Target: <span className="text-white font-mono">{requestUrl}</span></p>
+        </div>
+        
+        <div className="no-print">
+          <button 
+            onClick={downloadPdf}
+            disabled={downloading}
+            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-all border border-slate-700 shadow-lg"
+          >
+            {downloading ? <Activity size={16} className="animate-spin"/> : <Download size={16} />}
+            {downloading ? "Generating..." : "Export PDF"}
+          </button>
+        </div>
       </div>
+
+      {/* --- KPI GRID --- */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <MetricCard 
+          title="Visibility Score" 
+          value={result.overallScore} 
+          icon={Trophy} 
+          type="score" 
+          colorClass={result.overallScore >= 80 ? 'text-emerald-400' : result.overallScore >= 50 ? 'text-amber-400' : 'text-rose-400'}
+          subtext="AI Ranking Probability"
+        />
+        <MetricCard 
+          title="Brand Sentiment" 
+          value={result.brandSentiment} 
+          icon={ThumbsUp} 
+          trend={result.brandSentiment === 'Positive' ? 'Good' : 'Needs Work'}
+          trendUp={result.brandSentiment === 'Positive'}
+          colorClass="text-purple-400"
+          subtext="Based on top 10 sources"
+        />
+        <MetricCard 
+          title="Search Rank" 
+          value={typeof result.topRankingKeywords[0].rank === 'number' ? result.topRankingKeywords[0].rank : '-'} 
+          icon={Target} 
+          type="rank"
+          colorClass="text-blue-400"
+          subtext={`Keyword: ${result.topRankingKeywords[0].keyword}`}
+        />
+        <MetricCard 
+          title="Mentions" 
+          value={result.brandMentions} 
+          icon={Activity} 
+          trend="Detected" 
+          trendUp={true} 
+          colorClass="text-indigo-400"
+          subtext="In analyzed context"
+        />
+      </div>
+
+      {/* --- LLM SIMULATION WIDGET (NEW) --- */}
+      <LLMSimulationWidget result={result} keyword={requestKeyword || result.topRankingKeywords[0].keyword} />
+
+      {/* --- CHARTS ROW (LOCKED FREEMIUM) --- */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        {/* Competitor Analysis - LOCKED */}
+        <LockedFeature title="Competitor Analysis">
+           <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl h-80">
+             <div className="flex items-center justify-between mb-6">
+               <h3 className="text-white font-semibold flex items-center gap-2">
+                 <Target size={18} className="text-emerald-400" /> Market Leaders
+               </h3>
+             </div>
+             <CompetitorBarChart data={result.competitorAnalysis} />
+           </div>
+        </LockedFeature>
+
+        {/* Share of Voice - LOCKED */}
+        <LockedFeature title="Share of Voice">
+           <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl h-80">
+             <div className="flex items-center justify-between mb-6">
+               <h3 className="text-white font-semibold flex items-center gap-2">
+                 <Share2 size={18} className="text-blue-400" /> Brand Presence
+               </h3>
+             </div>
+             <ShareOfVoiceChart data={result.shareOfVoice} />
+           </div>
+        </LockedFeature>
+      </div>
+
+      {/* --- RECOMMENDATIONS (LIMITED) --- */}
+      <div className="mb-8 bg-slate-900/30 border border-slate-800 rounded-2xl p-6 md:p-8">
+        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+          <Lightbulb className="text-yellow-400" size={24} /> 
+          Optimization Checklist
+        </h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {result.recommendations.slice(0, 3).map((rec, idx) => {
+             const text = typeof rec === 'string' ? rec : rec.text;
+             const priority = typeof rec === 'object' ? rec.priority : 'High';
+             
+             return (
+              <div key={idx} className="flex items-start gap-4 p-4 rounded-xl bg-slate-800/40 border border-slate-700/50 hover:bg-slate-800 transition-colors">
+                <div className={`mt-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                  priority === 'High' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/20' : 
+                  priority === 'Medium' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/20' : 
+                  'bg-blue-500/20 text-blue-400 border border-blue-500/20'
+                }`}>
+                  {idx + 1}
+                </div>
+                <div>
+                  <div className="text-slate-200 text-sm font-medium leading-relaxed">{text}</div>
+                  <div className="mt-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">{priority} Priority</div>
+                </div>
+              </div>
+             );
+          })}
           
-      {/* Actions */}
-      <div className="flex gap-3 no-print mt-auto px-4 md:px-0">
-        <button 
-          onClick={handleExportPDF}
-          disabled={exporting}
-          className="flex-1 py-3 rounded-xl bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-300 hover:text-white text-sm font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50 min-w-0"
-        >
-           {exporting ? <Loader2 size={16} className="animate-spin flex-shrink-0"/> : <Download size={16} className="flex-shrink-0" />} 
-           <span className="truncate">{exporting ? "Generating PDF..." : "Export PDF (Snapshot)"}</span>
-        </button>
-        <button 
-          onClick={handleShare}
-          className="flex-1 py-3 rounded-xl bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-300 hover:text-white text-sm font-medium transition-colors flex items-center justify-center gap-2 relative min-w-0"
-        >
-           {copied ? <Check size={16} className="text-emerald-400 flex-shrink-0" /> : <Link size={16} className="flex-shrink-0"/>} 
-           <span className="truncate">{copied ? "Link Copied!" : "Share Link"}</span>
-        </button>
+          {/* Blurred / Locked Recommendations */}
+          {result.recommendations.length > 3 && (
+            <div className="relative overflow-hidden rounded-xl border border-dashed border-slate-700 bg-slate-900/20 flex flex-col items-center justify-center p-6 text-center group cursor-pointer hover:bg-slate-900/40 transition-colors">
+               <Lock className="text-slate-500 mb-2 group-hover:text-indigo-400 transition-colors" size={24} />
+               <p className="text-slate-400 text-sm font-medium">
+                 {result.recommendations.length - 3} more recommendations hidden
+               </p>
+               <span className="text-xs text-indigo-400 mt-1 font-bold">Upgrade to View All</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* --- CITATIONS (OPEN) --- */}
+      {result.groundingSources.length > 0 && (
+        <div className="mb-8">
+          <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+            <ExternalLink size={18} className="text-slate-400" /> 
+            Ranked Citations
+          </h3>
+          <div className="flex flex-wrap gap-3">
+            {result.groundingSources.map((source, idx) => (
+              <a 
+                key={idx}
+                href={source.uri} 
+                target="_blank" 
+                rel="noreferrer"
+                className="flex items-center gap-2 px-4 py-3 bg-slate-900 border border-slate-800 hover:border-blue-500/50 rounded-xl text-xs text-slate-400 hover:text-white transition-all hover:shadow-lg hover:shadow-blue-900/10 max-w-xs truncate"
+              >
+                <Globe size={14} className="shrink-0 text-slate-600" />
+                <span className="truncate">{source.title}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+      
+      {/* Footer Branding */}
+      <div className="text-center pt-8 border-t border-slate-800/50 text-slate-600 text-xs">
+         Generated by LLM Sight Agency Tools • {new Date().getFullYear()}
       </div>
 
     </div>

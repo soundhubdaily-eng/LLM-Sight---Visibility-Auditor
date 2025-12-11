@@ -5,7 +5,8 @@ import { analyzeVisibility } from './services/geminiService';
 import { ResultsDashboard } from './components/ResultsDashboard';
 import { LlmTxtGenerator } from './components/LlmTxtGenerator';
 import { ContentOptimizer } from './components/ContentOptimizer';
-import { Search, Globe, Sparkles, AlertCircle, ArrowRight, BarChart3, Loader2, CheckCircle2, RotateCcw, FileText, ScanSearch, Wand2, History, X, Trash2, Clock, ChevronRight } from 'lucide-react';
+import { LandingPage } from './components/LandingPage';
+import { Search, Globe, Sparkles, AlertCircle, ArrowRight, BarChart3, Loader2, CheckCircle2, RotateCcw, FileText, ScanSearch, Wand2, History, X, Trash2, Clock, ChevronRight, LayoutGrid } from 'lucide-react';
 
 // Loading steps to keep user engaged during API call
 const LOADING_STEPS = [
@@ -16,10 +17,11 @@ const LOADING_STEPS = [
   "Compiling visibility report..."
 ];
 
-type AppMode = 'audit' | 'generator' | 'optimizer';
+// Expanded AppMode to include 'home'
+type AppMode = 'home' | 'audit' | 'generator' | 'optimizer';
 
 const App: React.FC = () => {
-  const [mode, setMode] = useState<AppMode>('audit');
+  const [mode, setMode] = useState<AppMode>('home');
   const [url, setUrl] = useState('');
   const [keyword, setKeyword] = useState('');
   const [status, setStatus] = useState<AuditStatus>(AuditStatus.IDLE);
@@ -108,6 +110,7 @@ const App: React.FC = () => {
     if (urlParam && !autoAuditRun.current) {
       setUrl(urlParam);
       if (keywordParam) setKeyword(keywordParam);
+      setMode('audit'); // Force audit mode if params present
       
       if (shouldAudit) {
         autoAuditRun.current = true;
@@ -176,15 +179,16 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="relative min-h-screen bg-slate-900 text-slate-200 selection:bg-blue-500/30 overflow-hidden flex flex-col">
+    <div className="relative min-h-screen bg-slate-950 text-slate-200 selection:bg-blue-500/30 overflow-hidden flex flex-col font-sans">
       
-      {/* Animated Background Elements */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/20 rounded-full mix-blend-screen filter blur-[100px] animate-blob"></div>
-        <div className="absolute top-[20%] right-[-10%] w-[35%] h-[35%] bg-emerald-600/20 rounded-full mix-blend-screen filter blur-[100px] animate-blob animation-delay-2000"></div>
-        <div className="absolute bottom-[-10%] left-[20%] w-[40%] h-[40%] bg-purple-600/20 rounded-full mix-blend-screen filter blur-[100px] animate-blob animation-delay-4000"></div>
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
-      </div>
+      {/* Animated Background Elements - Global */}
+      {mode !== 'home' && (
+        <div className="fixed inset-0 z-0 pointer-events-none">
+          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full mix-blend-screen filter blur-[100px] animate-blob"></div>
+          <div className="absolute top-[20%] right-[-10%] w-[35%] h-[35%] bg-emerald-600/10 rounded-full mix-blend-screen filter blur-[100px] animate-blob animation-delay-2000"></div>
+          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+        </div>
+      )}
 
       {/* History Sidebar */}
       <div 
@@ -271,19 +275,29 @@ const App: React.FC = () => {
         ></div>
       )}
 
-      {/* Header */}
-      <header className="border-b border-slate-800/50 backdrop-blur-md sticky top-0 z-50 bg-slate-900/60 supports-[backdrop-filter]:bg-slate-900/60 shrink-0">
+      {/* Header - Adaptive based on mode */}
+      <header className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${mode === 'home' ? 'bg-transparent py-4' : 'bg-slate-900/80 backdrop-blur-md border-b border-slate-800/50 py-0'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={handleNewAudit}>
-            <div className="bg-gradient-to-tr from-blue-600 to-emerald-500 p-2 rounded-lg shadow-lg shadow-blue-500/20">
+          <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setMode('home')}>
+            <div className={`p-2 rounded-lg transition-all ${mode === 'home' ? 'bg-white/10 text-white' : 'bg-gradient-to-tr from-blue-600 to-emerald-500 shadow-lg shadow-blue-500/20'}`}>
               <Sparkles className="text-white" size={18} />
             </div>
-            <h1 className="text-xl font-bold tracking-tight text-white">
-              LLM Sight <span className="text-slate-500 font-normal text-sm ml-2 hidden sm:inline-block">Visibility Auditor</span>
+            <h1 className="text-xl font-bold tracking-tight text-white group-hover:text-blue-200 transition-colors">
+              LLM Sight <span className="text-slate-500 font-normal text-sm ml-2 hidden sm:inline-block">GEO Agency</span>
             </h1>
           </div>
           
           <div className="flex items-center gap-4">
+            {mode !== 'home' && (
+              <button 
+                onClick={() => setMode('home')}
+                className="hidden sm:flex items-center gap-2 text-sm font-medium text-slate-400 hover:text-white transition-colors"
+              >
+                <LayoutGrid size={18} />
+                <span>Services</span>
+              </button>
+            )}
+
             <button 
               onClick={() => setShowHistory(true)}
               className="hidden md:flex items-center gap-2 text-sm font-medium text-slate-400 hover:text-white transition-colors"
@@ -299,20 +313,15 @@ const App: React.FC = () => {
             >
               <History size={20} />
             </button>
-
-            <div className="hidden sm:flex text-xs font-medium text-slate-400 bg-slate-800/50 px-3 py-1.5 rounded-full border border-slate-700/50 items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_2px_rgba(16,185,129,0.3)]"></span>
-              Gemini 2.5 Flash
-            </div>
           </div>
         </div>
       </header>
 
-      <main className="relative z-10 flex-1 flex flex-col max-w-7xl mx-auto px-4 sm:px-6 w-full">
+      <main className={`relative z-10 flex-1 flex flex-col max-w-7xl mx-auto px-4 sm:px-6 w-full ${mode === 'home' ? 'pt-0' : 'pt-24'}`}>
         
-        {/* Navigation Tabs (Only visible when IDLE or in Generator/Optimizer mode) */}
-        {status !== AuditStatus.ANALYZING && status !== AuditStatus.COMPLETE && (
-          <div className="flex justify-center mt-8 mb-4">
+        {/* Navigation Tabs (Visible when NOT on Home) */}
+        {mode !== 'home' && status !== AuditStatus.ANALYZING && status !== AuditStatus.COMPLETE && (
+          <div className="flex justify-center mb-8">
              <div className="bg-slate-800/50 backdrop-blur-sm p-1 rounded-xl flex gap-1 border border-slate-700/50 overflow-x-auto max-w-full">
                 <button
                    onClick={() => setMode('audit')}
@@ -337,21 +346,24 @@ const App: React.FC = () => {
         )}
 
         {/* Content Area */}
-        <div className={`flex-1 flex flex-col transition-all duration-500 ${status === AuditStatus.COMPLETE ? 'justify-start pt-4 pb-12' : 'justify-center items-center py-12'}`}>
+        <div className={`flex-1 flex flex-col transition-all duration-500 ${status === AuditStatus.COMPLETE ? 'justify-start pt-4 pb-12' : 'justify-center items-center'}`}>
           
+          {/* MODE: HOME */}
+          {mode === 'home' && <LandingPage onNavigate={setMode} />}
+
           {/* MODE: GENERATOR */}
           {mode === 'generator' && (
-             <LlmTxtGenerator />
+             <div className="py-12 w-full"><LlmTxtGenerator /></div>
           )}
 
           {/* MODE: OPTIMIZER */}
           {mode === 'optimizer' && (
-             <ContentOptimizer />
+             <div className="py-12 w-full"><ContentOptimizer /></div>
           )}
 
           {/* MODE: AUDIT (Normal Workflow) */}
           {mode === 'audit' && (
-            <>
+            <div className="w-full py-12">
               {/* 1. IDLE STATE: Hero & Form */}
               {status === AuditStatus.IDLE && (
                 <div className="w-full max-w-4xl mx-auto flex flex-col items-center animate-fade-in">
@@ -359,11 +371,11 @@ const App: React.FC = () => {
                     <Sparkles size={14} /> New: Auto-Discovery Mode Available
                   </div>
                   <h2 className="text-5xl sm:text-6xl font-bold text-white mb-6 tracking-tight leading-[1.1] text-center">
-                    How visible is your brand <br/>
-                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-emerald-400 to-blue-500">in the AI Era?</span>
+                    Check your visibility <br/>
+                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-emerald-400 to-blue-500">in Generative AI</span>
                   </h2>
                   <p className="text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed text-center mb-12">
-                    Traditional SEO is changing. Audit your ranking, sentiment, and citations across Generative Search Engines.
+                    Enter your website below to audit ranking, sentiment, and citations across modern Search Engines.
                   </p>
 
                   <div className="w-full max-w-2xl relative group">
@@ -507,7 +519,7 @@ const App: React.FC = () => {
                   <ResultsDashboard result={result} requestUrl={url} requestKeyword={keyword} />
                 </div>
               )}
-            </>
+            </div>
           )}
         </div>
       </main>
