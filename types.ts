@@ -2,6 +2,7 @@
 export interface AuditRequest {
   url: string;
   keywords: string[];
+  country?: string;
   competitors?: string[];
 }
 
@@ -29,13 +30,18 @@ export interface AuditResult {
   brandMentions: number;
   topRankingKeywords: Array<{ keyword: string; rank: number | 'Not Found' }>;
   competitorAnalysis: CompetitorData[];
-  recommendations: (string | RecommendationItem)[]; // Union type for backward compatibility
+  recommendations: (string | RecommendationItem)[]; 
   groundingSources: Array<{ title: string; uri: string }>;
   rawAnalysis: string;
   shareOfVoice: Array<{ name: string; value: number }>;
   llmResponsePreview: string;
   brandAttributes: string[];
   discoveredKeywords?: Array<{ keyword: string; relevance: string }>;
+  responseVariations?: {
+    standard: string;
+    detailed: string;
+    citationFocused: string;
+  };
 }
 
 export interface AuditHistoryItem {
@@ -43,6 +49,7 @@ export interface AuditHistoryItem {
   timestamp: number;
   url: string;
   keyword: string;
+  country?: string;
   result: AuditResult;
 }
 
@@ -50,7 +57,7 @@ export interface LlmTxtRequest {
   websiteName: string;
   url: string;
   description: string;
-  keyPages: string[]; // Comma separated URLs usually
+  keyPages: string[]; 
 }
 
 export interface ContentOptimizationRequest {
@@ -59,8 +66,8 @@ export interface ContentOptimizationRequest {
 }
 
 export interface ContentOptimizationResult {
-  aiReadabilityScore: number; // 0-100
-  factDensity: number; // 0-100
+  aiReadabilityScore: number; 
+  factDensity: number; 
   hallucinationRisk: 'Low' | 'Medium' | 'High';
   identifiedIssues: string[];
   optimizedContent: string;

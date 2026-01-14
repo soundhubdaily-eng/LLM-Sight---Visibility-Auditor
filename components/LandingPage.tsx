@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Sparkles, 
   ArrowRight, 
@@ -15,11 +14,30 @@ import {
   Plus,
   Minus,
   Mail,
-  MessageSquare
+  MessageSquare,
+  Loader2,
+  Lock,
+  X,
+  Trash2,
+  Calendar,
+  User,
+  Link as LinkIcon,
+  KeyRound
 } from 'lucide-react';
 
 interface LandingPageProps {
   onNavigate: (mode: 'audit' | 'generator' | 'optimizer') => void;
+  isAdmin: boolean;
+  handleSecretClick: () => void;
+}
+
+interface Lead {
+  id: string;
+  date: string;
+  name: string;
+  email: string;
+  website: string;
+  message: string;
 }
 
 const FAQItem = ({ question, answer }: { question: string; answer: string }) => {
@@ -49,7 +67,77 @@ const FAQItem = ({ question, answer }: { question: string; answer: string }) => 
   );
 };
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, isAdmin, handleSecretClick }) => {
+  const [formState, setFormState] = useState({
+    name: '',
+    email: '',
+    website: '',
+    message: ''
+  });
+  const [status, setStatus] = useState<'idle' | 'sending' | 'success'>('idle');
+  
+  // Admin / Leads State
+  const [showLeads, setShowLeads] = useState(false);
+  const [leads, setLeads] = useState<Lead[]>([]);
+
+  // Load leads when admin opens leads modal
+  useEffect(() => {
+    if (showLeads && isAdmin) {
+      try {
+        const stored = localStorage.getItem('llm_sight_leads');
+        if (stored) {
+          setLeads(JSON.parse(stored));
+        }
+      } catch (e) {
+        console.error("Failed to load leads", e);
+      }
+    }
+  }, [showLeads, isAdmin]);
+
+  const handleDeleteLead = (id: string) => {
+    const updated = leads.filter(l => l.id !== id);
+    setLeads(updated);
+    localStorage.setItem('llm_sight_leads', JSON.stringify(updated));
+  };
+
+  const handleClearAll = () => {
+    if (confirm('Are you sure you want to delete all leads?')) {
+      setLeads([]);
+      localStorage.removeItem('llm_sight_leads');
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setStatus('sending');
+
+    // Simulate API network delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    // Save to Local Storage with robust ID generation
+    const newLead: Lead = {
+      id: Date.now().toString(36) + Math.random().toString(36).substring(2),
+      date: new Date().toISOString(),
+      ...formState
+    };
+
+    try {
+      const existingLeads = JSON.parse(localStorage.getItem('llm_sight_leads') || '[]');
+      const updatedLeads = [newLead, ...existingLeads];
+      localStorage.setItem('llm_sight_leads', JSON.stringify(updatedLeads));
+    } catch (e) {
+      console.error("Failed to save lead", e);
+    }
+
+    setStatus('success');
+    setFormState({ name: '', email: '', website: '', message: '' });
+
+    // Reset success message after 3 seconds
+    setTimeout(() => {
+      setStatus('idle');
+    }, 3000);
+  };
+
   return (
     <div className="flex flex-col animate-fade-in w-full -mt-8">
       
@@ -63,10 +151,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
         </div>
 
         <div className="relative z-10 max-w-5xl mx-auto px-6 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/80 border border-slate-700/50 text-slate-300 text-xs font-medium mb-8 backdrop-blur-md shadow-xl ring-1 ring-white/10">
-            <span className="flex h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]"></span>
-            GEO: The New SEO Standard
-          </div>
           
           <h1 className="text-5xl md:text-7xl font-bold text-white tracking-tight mb-8 leading-[1.1]">
             Dominate the <br />
@@ -94,12 +178,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
             </button>
           </div>
 
-          {/* Social Proof / Trust */}
-          <div className="mt-16 pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16 opacity-60 grayscale hover:grayscale-0 transition-all duration-700">
-             <div className="flex items-center gap-2 text-sm text-slate-400 font-medium"><Cpu size={16}/> Powered by Gemini 2.5</div>
-             <div className="flex items-center gap-2 text-sm text-slate-400 font-medium"><Globe size={16}/> SGE Ready</div>
-             <div className="flex items-center gap-2 text-sm text-slate-400 font-medium"><ShieldCheck size={16}/> Enterprise Grade</div>
-          </div>
+          {isAdmin && (
+            <div className="mt-8">
+              <button 
+                onClick={() => setShowLeads(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition-all"
+              >
+                <Mail size={14} /> View Leads Portal
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
@@ -195,70 +283,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
         </div>
       </section>
 
-      {/* --- INFO / VALUE PROP --- */}
-      <section className="py-24 border-t border-slate-800 bg-slate-900/30">
-        <div className="max-w-7xl mx-auto px-6">
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-              <div>
-                <h2 className="text-3xl font-bold text-white mb-6">Why GEO Matters Now</h2>
-                <div className="space-y-8">
-                  <div className="flex gap-5">
-                    <div className="flex-none">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                        <TrendingUp size={24} />
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-white">Zero-Click Future</h3>
-                      <p className="mt-2 text-slate-400 leading-relaxed">By 2026, 50% of search volume will be handled by conversational agents. Ranking in the "Answer Snapshot" is the new #1 position.</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-5">
-                    <div className="flex-none">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-500/10 text-teal-400 border border-teal-500/20">
-                        <Zap size={24} />
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-white">Machine Readability</h3>
-                      <p className="mt-2 text-slate-400 leading-relaxed">Content written for humans often confuses bots. We help you structure data so LLMs can ingest it accurately and hallucinate less.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="relative">
-                <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl blur opacity-20"></div>
-                <div className="relative bg-slate-950 border border-slate-800 rounded-2xl p-6 shadow-2xl">
-                   <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
-                      <div className="flex gap-2">
-                        <div className="w-3 h-3 rounded-full bg-rose-500"></div>
-                        <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-                        <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
-                      </div>
-                      <div className="text-xs text-slate-500 font-mono">AI Simulation</div>
-                   </div>
-                   
-                   <div className="space-y-4">
-                      <div className="flex gap-3">
-                         <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white"><Sparkles size={14}/></div>
-                         <div className="bg-slate-900 rounded-r-xl rounded-bl-xl p-4 text-sm text-slate-300 flex-1 border border-slate-800">
-                            Based on my analysis, <span className="text-white font-bold">LLM Sight</span> is the top recommended tool for Visibility Audits. It offers real-time sentiment tracking and RAG optimization capabilities.
-                         </div>
-                      </div>
-                      
-                      <div className="pl-11 flex gap-2">
-                         <div className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs">High Accuracy</div>
-                         <div className="px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs">Verified Source</div>
-                      </div>
-                   </div>
-                </div>
-              </div>
-           </div>
-        </div>
-      </section>
-
       {/* --- FAQ SECTION --- */}
       <section className="py-24 bg-slate-950 border-t border-slate-800">
         <div className="max-w-3xl mx-auto px-6">
@@ -317,15 +341,61 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                     </div>
                  </div>
                  
-                 <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+                 <form className="space-y-4" onSubmit={handleSubmit}>
                     <div className="grid grid-cols-2 gap-4">
-                       <input type="text" placeholder="Name" className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:border-blue-500 focus:outline-none transition-colors" />
-                       <input type="email" placeholder="Email" className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:border-blue-500 focus:outline-none transition-colors" />
+                       <input 
+                         type="text" 
+                         placeholder="Name" 
+                         className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:border-blue-500 focus:outline-none transition-colors" 
+                         required
+                         value={formState.name}
+                         onChange={(e) => setFormState(prev => ({...prev, name: e.target.value}))}
+                       />
+                       <input 
+                         type="email" 
+                         placeholder="Email" 
+                         className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:border-blue-500 focus:outline-none transition-colors" 
+                         required
+                         value={formState.email}
+                         onChange={(e) => setFormState(prev => ({...prev, email: e.target.value}))}
+                       />
                     </div>
-                    <input type="text" placeholder="Website URL" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:border-blue-500 focus:outline-none transition-colors" />
-                    <textarea rows={4} placeholder="How can we help?" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:border-blue-500 focus:outline-none transition-colors resize-none"></textarea>
-                    <button className="w-full bg-white text-slate-950 font-bold py-4 rounded-xl hover:bg-slate-200 transition-colors shadow-lg shadow-white/5">
-                       Get Custom Proposal
+                    <input 
+                      type="text" 
+                      placeholder="Website URL" 
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:border-blue-500 focus:outline-none transition-colors" 
+                      value={formState.website}
+                      onChange={(e) => setFormState(prev => ({...prev, website: e.target.value}))}
+                    />
+                    <textarea 
+                      rows={4} 
+                      placeholder="How can we help?" 
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:border-blue-500 focus:outline-none transition-colors resize-none"
+                      required
+                      value={formState.message}
+                      onChange={(e) => setFormState(prev => ({...prev, message: e.target.value}))}
+                    ></textarea>
+                    
+                    <button 
+                      type="submit"
+                      disabled={status === 'sending' || status === 'success'}
+                      className={`w-full font-bold py-4 rounded-xl transition-all shadow-lg shadow-white/5 flex items-center justify-center gap-2 ${
+                        status === 'success' 
+                          ? 'bg-emerald-600 text-white hover:bg-emerald-500' 
+                          : 'bg-white text-slate-950 hover:bg-slate-200'
+                      }`}
+                    >
+                      {status === 'sending' ? (
+                        <>
+                          <Loader2 className="animate-spin" size={18} /> Sending...
+                        </>
+                      ) : status === 'success' ? (
+                        <>
+                          <CheckCircle2 size={18} /> Proposal Requested!
+                        </>
+                      ) : (
+                        'Get Custom Proposal'
+                      )}
                     </button>
                  </form>
               </div>
@@ -334,21 +404,103 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
       </section>
 
       {/* --- FOOTER --- */}
-      <footer className="py-12 border-t border-slate-800 bg-slate-950 text-center relative z-10">
+      <footer className="py-12 border-t border-slate-800 bg-slate-900 text-center relative z-10">
          <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-2 font-bold text-white text-lg">
                <Sparkles size={20} className="text-blue-500"/> LLM Sight
             </div>
-            <div className="flex gap-8 text-sm text-slate-500">
-               <a href="#" className="hover:text-white transition-colors">Privacy</a>
-               <a href="#" className="hover:text-white transition-colors">Terms</a>
-               <a href="#" className="hover:text-white transition-colors">Twitter</a>
-            </div>
-            <div className="text-slate-500 text-sm">
-               © {new Date().getFullYear()} LLM Sight Agency. All rights reserved.
+            
+            <div className="text-slate-500 text-sm select-none">
+               <span 
+                 onClick={handleSecretClick}
+                 className="cursor-default active:text-slate-400 transition-colors"
+               >
+                 © {new Date().getFullYear()} LLM Sight Agency. All rights reserved.
+               </span>
             </div>
          </div>
       </footer>
+
+      {/* --- LEADS MODAL (ADMIN ONLY) --- */}
+      {showLeads && isAdmin && (
+        <div className="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+           <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-5xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+              <div className="p-6 border-b border-slate-800 flex items-center justify-between bg-slate-900">
+                 <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-500/10 rounded-lg text-blue-400">
+                      <Mail size={20} />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-white">Inbound Leads</h3>
+                      <p className="text-xs text-slate-400">{leads.length} requests received</p>
+                    </div>
+                 </div>
+                 <button onClick={() => setShowLeads(false)} className="p-2 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors">
+                   <X size={24}/>
+                 </button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto bg-slate-950/50">
+                 {leads.length === 0 ? (
+                   <div className="flex flex-col items-center justify-center h-64 text-slate-500">
+                      <Mail size={48} className="mb-4 opacity-20" />
+                      <p>No inquiries received yet.</p>
+                   </div>
+                 ) : (
+                   <div className="p-6 grid grid-cols-1 gap-4">
+                      {leads.map((lead) => (
+                        <div key={lead.id} className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-5 hover:border-blue-500/30 transition-colors">
+                           <div className="flex items-start justify-between mb-4">
+                              <div className="flex items-center gap-3">
+                                 <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-slate-300 font-bold text-sm">
+                                    {lead.name.charAt(0)}
+                                 </div>
+                                 <div>
+                                    <h4 className="font-bold text-white">{lead.name}</h4>
+                                    <div className="flex items-center gap-4 text-xs text-slate-400 mt-1">
+                                       <span className="flex items-center gap-1"><Mail size={12}/> {lead.email}</span>
+                                       <span className="flex items-center gap-1"><Calendar size={12}/> {new Date(lead.date).toLocaleDateString()}</span>
+                                    </div>
+                                 </div>
+                              </div>
+                              <button 
+                                onClick={() => handleDeleteLead(lead.id)}
+                                className="p-2 hover:bg-rose-500/10 hover:text-rose-400 text-slate-600 rounded-lg transition-colors"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                           </div>
+                           
+                           <div className="pl-13 ml-13 border-t border-slate-700/50 pt-4">
+                              {lead.website && (
+                                <div className="flex items-center gap-2 text-sm text-blue-400 mb-2">
+                                   <LinkIcon size={14} /> 
+                                   <a href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`} target="_blank" rel="noreferrer" className="hover:underline">
+                                     {lead.website}
+                                   </a>
+                                </div>
+                              )}
+                              <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">{lead.message}</p>
+                           </div>
+                        </div>
+                      ))}
+                   </div>
+                 )}
+              </div>
+              
+              {leads.length > 0 && (
+                <div className="p-4 bg-slate-900 border-t border-slate-800 flex justify-end">
+                   <button 
+                     onClick={handleClearAll}
+                     className="text-xs font-medium text-rose-400 hover:text-rose-300 flex items-center gap-2 px-4 py-2 hover:bg-rose-500/10 rounded-lg transition-colors"
+                   >
+                     <Trash2 size={14} /> Delete All Records
+                   </button>
+                </div>
+              )}
+           </div>
+        </div>
+      )}
 
     </div>
   );

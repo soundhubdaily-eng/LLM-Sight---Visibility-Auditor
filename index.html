@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -16,7 +17,6 @@
         overflow-x: hidden;
       }
 
-      /* Custom Scrollbar */
       ::-webkit-scrollbar {
         width: 8px;
       }
@@ -31,7 +31,6 @@
         background: #475569; 
       }
 
-      /* Animations */
       @keyframes blob {
         0% { transform: translate(0px, 0px) scale(1); }
         33% { transform: translate(30px, -50px) scale(1.1); }
@@ -66,81 +65,18 @@
         background-size: 1000px 100%;
       }
 
-      /* Print Styles for PDF Export */
+      .print-only { display: none; }
+
       @media print {
         body {
           background-color: white !important;
           color: black !important;
-          overflow: visible !important;
         }
-
-        /* Essential overrides to allow full page printing */
-        html, body, #root, main, div {
-          overflow: visible !important;
-          height: auto !important;
-          max-height: none !important;
-        }
-
-        /* Hide UI elements not needed in PDF */
-        header, 
-        button, 
-        .no-print, 
-        .animate-blob,
-        .fixed.inset-0,
-        form {
-          display: none !important;
-        }
-        
-        /* Reset layouts for print */
-        main {
-          max-width: 100% !important;
-          width: 100% !important;
-          margin: 0 !important;
-          padding: 20px !important;
-          display: block !important;
-        }
-        
-        /* Adjust cards for white background - explicit overrides for Tailwind classes */
-        .bg-slate-800\/40, 
-        .bg-slate-900, 
-        .bg-slate-900\/80,
-        .bg-slate-800\/50,
-        .backdrop-blur-sm,
-        .backdrop-blur-xl,
-        .bg-gradient-to-br,
-        .bg-gradient-to-r {
-          background: white !important;
-          border: 1px solid #ddd !important;
-          box-shadow: none !important;
-          color: black !important;
-          backdrop-filter: none !important;
-          opacity: 1 !important;
-        }
-        
-        /* Fix text colors */
-        .text-slate-200, .text-slate-300, .text-slate-400, .text-slate-500, .text-white {
-          color: #333 !important;
-        }
-        
-        /* Ensure charts and layout fit */
-        .grid {
-          display: block !important;
-        }
-        .grid > * {
-          margin-bottom: 30px;
-          page-break-inside: avoid;
-        }
-
-        /* Specific fix for scrollable citations */
-        .overflow-y-auto {
-          height: auto !important;
-          max-height: none !important;
-          overflow: visible !important;
-        }
-        
-        /* Force background graphics to print if browser settings allow */
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
+        .no-print { display: none !important; }
+        .print-only { display: block !important; }
+        .print-bg-white { background: white !important; }
+        .print-unblurred { filter: none !important; opacity: 1 !important; pointer-events: auto !important; }
+        .results-container { padding: 0 !important; }
       }
     </style>
   <script type="importmap">
